@@ -1,30 +1,32 @@
 #include <zephyr.h>
-#include <stdio.h>
-#include <drivers/uart.h>
-#include <string.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/nrf_clock_control.h>
-#include <logging/log.h>
+#include <stdlib.h>
+#include <https_client.h>
+#include <device.h>
+#include <devicetree.h>
+#include <drivers/i2c.h>
+#include <sys/printk.h>
+#include <data/json.h>
+//#include <parse_json.h>
 
-LOG_MODULE_REGISTER(app_main);
+// 1000 msec = 1 sec
+#define SLEEP_TIME_MS 1000
 
-/**@brief Recoverable modem library error. */
-void nrf_modem_recoverable_error_handler(uint32_t err) {
-	printk("Modem library recoverable error: %u\n", err);
-}
-
-/* To strictly comply with UART timing, enable external XTAL oscillator */
-void enable_xtal(void) {
-	struct onoff_manager *clk_mgr;
-	static struct onoff_client cli = {};
-
-	clk_mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
-	sys_notify_init_spinwait(&cli.notify);
-	(void)onoff_request(clk_mgr, &cli);
-}
+#define MY_I2C "I2C_1"
+const struct device *i2c_dev;
 
 void main(void) {
-  enable_xtal();
-	LOG_INF("Version: %s", CONFIG_APP_VERSION);
-	LOG_INF("The AT host sample started\n");
+  k_msleep(SLEEP_TIME_MS);
+  printk("\n>\t %s\n\n", http_get_request());
+  //parse_json();
+  
+	i2c_dev = device_get_binding(MY_I2C);
+	if (i2c_dev == NULL) {
+		printk("Can't bind I2C device %s\n", MY_I2C);
+		return;
+	}
+
+	// Write to i2c
+	uint8_t i2c_addr = 0x41;
+  unsigned char i2c_tx_buffer[] = {'3', '0'};
+  i2c_write(i2c_dev, &i2c_tx_buffer, sizeof(i2c_tx_buffer), i2c_addr);
 }

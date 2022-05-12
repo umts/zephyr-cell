@@ -6,6 +6,9 @@
 # Zephyr build folder
 build/
 
+# Zephyr logs
+app/log*
+
 # Node artifact files
 node_modules/
 dist/
